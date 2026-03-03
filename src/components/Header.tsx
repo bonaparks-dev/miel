@@ -9,17 +9,17 @@ export default function Header({ cart }: HeaderProps) {
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
 
   return (
-    <header className="bg-ivory border-b border-ivory-dark sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 no-underline">
+    <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
+        <Link to="/" className="no-underline">
           <img
             src="/logo.png"
             alt="Miel de Fleurs – Château de Jeurre"
-            className="h-12 w-auto"
+            className="h-16 w-auto"
           />
         </Link>
 
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-8">
           <Link
             to="/"
             className="text-sm text-noir-light hover:text-honey-dark transition-colors no-underline hidden sm:inline"

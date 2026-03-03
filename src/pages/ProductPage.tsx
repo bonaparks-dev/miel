@@ -1,5 +1,6 @@
-import ProductLabelCard from '../components/ProductLabelCard'
+import { useState } from 'react'
 import { HONEY_PRODUCT } from '../utils/products'
+import type { ProductVariant } from '../utils/products'
 import type { CartItem } from '../utils/cart'
 
 interface Props {
@@ -7,74 +8,200 @@ interface Props {
 }
 
 export default function ProductPage({ onAddToCart }: Props) {
+  const product = HONEY_PRODUCT
+  const defaultVariant = product.variants.find((v) => v.available) ?? product.variants[1]
+  const [selected, setSelected] = useState<ProductVariant>(defaultVariant)
+  const [addedFeedback, setAddedFeedback] = useState(false)
+
   function handleAdd() {
+    if (!selected.available) return
     onAddToCart({
-      id: HONEY_PRODUCT.id,
-      name: HONEY_PRODUCT.name,
-      weight: HONEY_PRODUCT.weight,
-      priceUnit: HONEY_PRODUCT.priceUnit,
-      pricePerKg: HONEY_PRODUCT.pricePerKg,
-      image: HONEY_PRODUCT.image,
+      id: selected.id,
+      name: `${product.name} – ${selected.weight}`,
+      weight: selected.weight,
+      priceUnit: selected.priceUnit,
+      pricePerKg: selected.pricePerKg,
+      image: product.image,
     })
+    setAddedFeedback(true)
+    setTimeout(() => setAddedFeedback(false), 2000)
   }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-        {/* Left: Product Card */}
-        <ProductLabelCard product={HONEY_PRODUCT} onAddToCart={handleAdd} />
+        {/* Left: Product image */}
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+          <div className="flex items-center justify-center p-8 md:p-12">
+            <img
+              src="/logo.png"
+              alt={`${product.name} – ${product.subtitle}`}
+              className="w-full max-w-sm h-auto"
+            />
+          </div>
+        </div>
 
-        {/* Right: Description */}
-        <div className="space-y-8">
+        {/* Right: Product details */}
+        <div className="space-y-6">
           <div>
-            <h1 className="font-display text-3xl font-bold text-noir mb-2">
-              {HONEY_PRODUCT.name}
+            <h1 className="font-display text-3xl font-bold text-noir mb-1">
+              {product.name}
             </h1>
             <p className="font-display text-lg text-gris italic">
-              {HONEY_PRODUCT.subtitle}
+              {product.subtitle}
             </p>
           </div>
 
           <p className="text-noir-light leading-relaxed">
-            {HONEY_PRODUCT.description}
+            {product.description}
           </p>
 
-          <div className="bg-ivory-dark rounded-lg p-6 space-y-3">
-            <h3 className="font-display text-lg font-semibold text-noir">
-              Informations reglementaires
+          {/* Size selector */}
+          <div>
+            <h3 className="text-sm font-semibold text-noir mb-3 uppercase tracking-wider">
+              Choisir votre format
             </h3>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-              <dt className="text-gris">Denomination :</dt>
-              <dd>{HONEY_PRODUCT.name}</dd>
-              <dt className="text-gris">Poids net :</dt>
-              <dd>{HONEY_PRODUCT.weight}</dd>
-              <dt className="text-gris">Origine :</dt>
-              <dd>{HONEY_PRODUCT.origin}</dd>
-              <dt className="text-gris">Prix TTC :</dt>
-              <dd>{HONEY_PRODUCT.priceUnit.toFixed(2)} &euro;</dd>
-              <dt className="text-gris">Prix au kilo :</dt>
-              <dd>{HONEY_PRODUCT.pricePerKg.toFixed(2)} &euro;/kg</dd>
-              <dt className="text-gris">DDM :</dt>
-              <dd>{HONEY_PRODUCT.ddm}</dd>
-              <dt className="text-gris">Conservation :</dt>
-              <dd>{HONEY_PRODUCT.conservation}</dd>
-              <dt className="text-gris">Producteur :</dt>
-              <dd>{HONEY_PRODUCT.producer}</dd>
-              <dt className="text-gris">Adresse :</dt>
-              <dd>{HONEY_PRODUCT.producerAddress}</dd>
-              <dt className="text-gris">N&deg; de lot :</dt>
-              <dd>{HONEY_PRODUCT.lot}</dd>
-            </dl>
+            <div className="grid grid-cols-3 gap-3">
+              {product.variants.map((variant) => (
+                <VariantCard
+                  key={variant.id}
+                  variant={variant}
+                  isSelected={selected.id === variant.id}
+                  onSelect={() => variant.available && setSelected(variant)}
+                />
+              ))}
+            </div>
           </div>
 
+          {/* Dynamic price display */}
+          <div className="flex items-baseline gap-3">
+            <span className="text-4xl font-display font-bold text-noir">
+              {selected.priceUnit.toFixed(2)} &euro;
+            </span>
+            <span className="text-sm text-gris">TTC</span>
+            <span className="text-sm text-gris ml-auto">
+              {selected.pricePerKg.toFixed(2)} &euro;/kg
+            </span>
+          </div>
+
+          {/* Add to cart */}
           <button
             onClick={handleAdd}
-            className="w-full lg:w-auto bg-honey text-noir font-semibold px-8 py-3 rounded hover:bg-honey-dark transition-colors cursor-pointer text-sm uppercase tracking-wider"
+            disabled={!selected.available}
+            className={`w-full font-semibold py-4 rounded transition-all cursor-pointer text-sm uppercase tracking-wider ${
+              !selected.available
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : addedFeedback
+                  ? 'bg-green-600 text-white'
+                  : 'bg-honey text-noir hover:bg-honey-dark'
+            }`}
           >
-            Ajouter au panier &mdash; {HONEY_PRODUCT.priceUnit.toFixed(2)} &euro;
+            {!selected.available
+              ? 'Épuisé – Bientôt disponible'
+              : addedFeedback
+                ? 'Ajouté au panier !'
+                : `Ajouter au panier — ${selected.priceUnit.toFixed(2)} \u20AC`}
           </button>
+
+          {selected.available && (
+            <p className="text-xs text-gris text-center">
+              Livraison gratuite dès 50 &euro; d'achat
+            </p>
+          )}
+
+          {/* Regulatory info */}
+          <details className="border border-gray-200 rounded-lg">
+            <summary className="px-5 py-3 cursor-pointer text-sm font-semibold text-noir hover:bg-gray-50 transition-colors">
+              Informations réglementaires
+            </summary>
+            <div className="px-5 pb-4">
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+                <dt className="text-gris">Dénomination :</dt>
+                <dd>{product.name}</dd>
+                <dt className="text-gris">Poids net :</dt>
+                <dd>{selected.weight}</dd>
+                <dt className="text-gris">Origine :</dt>
+                <dd>{product.origin}</dd>
+                <dt className="text-gris">Prix TTC :</dt>
+                <dd>{selected.priceUnit.toFixed(2)} &euro;</dd>
+                <dt className="text-gris">Prix au kilo :</dt>
+                <dd>{selected.pricePerKg.toFixed(2)} &euro;/kg</dd>
+                <dt className="text-gris">DDM :</dt>
+                <dd>{product.ddm}</dd>
+                <dt className="text-gris">Conservation :</dt>
+                <dd>{product.conservation}</dd>
+                <dt className="text-gris">Producteur :</dt>
+                <dd>{product.producer}</dd>
+                <dt className="text-gris">Adresse :</dt>
+                <dd>{product.producerAddress}</dd>
+                <dt className="text-gris">N&deg; de lot :</dt>
+                <dd>{product.lot}</dd>
+              </dl>
+            </div>
+          </details>
         </div>
       </div>
     </div>
+  )
+}
+
+function VariantCard({
+  variant,
+  isSelected,
+  onSelect,
+}: {
+  variant: ProductVariant
+  isSelected: boolean
+  onSelect: () => void
+}) {
+  const soldOut = !variant.available
+
+  return (
+    <button
+      onClick={onSelect}
+      disabled={soldOut}
+      className={`relative rounded-lg border-2 p-3 text-left transition-all cursor-pointer ${
+        soldOut
+          ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+          : isSelected
+            ? 'border-honey bg-amber-50 shadow-sm'
+            : 'border-gray-200 bg-white hover:border-gray-300'
+      }`}
+    >
+      {/* Badge */}
+      {variant.badge && !soldOut && (
+        <span
+          className={`absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${
+            variant.badge === 'Meilleur prix'
+              ? 'bg-green-600 text-white'
+              : 'bg-honey text-noir'
+          }`}
+        >
+          {variant.badge}
+        </span>
+      )}
+
+      {/* Weight */}
+      <p className={`font-display text-lg font-bold ${soldOut ? 'text-gray-400' : 'text-noir'}`}>
+        {variant.weight}
+      </p>
+
+      {/* Price */}
+      <p className={`text-sm font-semibold ${soldOut ? 'text-gray-400' : 'text-noir'}`}>
+        {variant.priceUnit.toFixed(2)} &euro;
+      </p>
+
+      {/* Price per kg */}
+      <p className="text-xs text-gris">
+        {variant.pricePerKg.toFixed(2)} &euro;/kg
+      </p>
+
+      {/* Savings or sold out */}
+      {soldOut ? (
+        <p className="text-xs font-semibold text-red-400 mt-1">Épuisé</p>
+      ) : variant.savings ? (
+        <p className="text-xs font-semibold text-green-600 mt-1">{variant.savings}</p>
+      ) : null}
+    </button>
   )
 }
